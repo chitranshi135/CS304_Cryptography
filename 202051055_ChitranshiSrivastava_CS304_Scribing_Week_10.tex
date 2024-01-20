@@ -1,0 +1,227 @@
+
+
+
+\documentclass[11pt]{article}
+\usepackage[hmargin=1in,vmargin=1in]{geometry}
+\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{amsmath,amssymb,amsfonts,url,sectsty,framed,tcolorbox,framed}
+\usepackage{nicematrix}
+\usepackage{amssymb}
+\usepackage{algorithm2e}
+\setcounter{MaxMatrixCols}{16}
+\usepackage{tikz}
+\usepackage{hyperref}
+\usetikzlibrary{decorations.pathreplacing}
+\newcommand{\pf}{{\bf Proof: }}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{definition}{Definition}
+\newtheorem{remark}{Remark}
+\newcommand{\zbar}{\raisebox{0.2ex}{--}\kern-0.6em Z}
+\newcommand{\qed}{\hfill \rule{2mm}{2mm}}
+\usepackage{titlesec}
+
+\setcounter{secnumdepth}{4}
+\titleclass{\subsubsubsection}{straight}[\subsection]
+\newcounter{subsubsubsection}[subsubsection]
+\renewcommand{\thesubsubsubsection}{\thesubsubsection.\arabic{subsubsubsection}}
+\titleformat{\subsubsubsection}{\normalfont\normalsize\bfseries}{\thesubsubsubsection}{1em}{}
+\titlespacing*{\subsubsubsection}{0pt}{3.25ex plus 1ex minus .2ex}{1.5ex plus .2ex}
+
+\setcounter{tocdepth}{4}
+
+\begin{document}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\noindent
+\rule{\textwidth}{1pt}
+\begin{center}
+{\bf [CS304] Introduction to Cryptography and Network Security}
+\end{center}
+Course Instructor: Dr. Dibyendu Roy \hfill Winter 2022-2023\\
+Scribed by: Chitranshi Srivastava (202051055) \hfill Lecture 19(Week 10)
+\\
+\rule{\textwidth}{1pt}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%write here
+
+\section{RSA (Rivest Shamir Adleman) Encryption}
+It is the first public key encryption algorithm. Before beginning any discussion on RSA encryption, let's first recall a few concepts.
+\begin{itemize}
+    \item The Euler's Totient Function $\phi(n)$ denotes the number of integers less than n that are co-prime to n, i.e number of x such that gcd(x, n) = 1 where $1 \leq x \leq n-1$
+    \item Let there be a set $S = \{x$ mod m$\}$ such that $|S| = m$.
+    \begin{center}
+        $S = \{r_1, r_2,\hdots, r_m\}$
+    \end{center}
+    All the elements in the set S are unique (usually they are from 0 to m-1). Assume an integer $a$ such that $gcd(a, m) = 1$. Let's say that there is another set $S_1$ such that,
+    \begin{center}
+        $S_1 = \{ar_1$ mod $m, ar_2$ mod m$,\hdots, ar_m$ mod $m\}$
+    \end{center}
+    Since, $\{r_1, r_2,\hdots, r_m\}$ are different elements and gcd(a, m) = 1, it can be concluded that $\{ar_1$ mod $m, ar_2$ mod m$,\hdots, ar_m$ mod $m\}$ will also be $m$ unique elements. This can be proved using contradiction. Suppose, if $ar_i = ar_j$ for $r_i \neq r_j$. Therefore,
+    \begin{center}
+        $ar_i \equiv ar_j$ mod $m$
+    \end{center}
+    Since, gcd(a, m) = 1, therfore, $1 = ab + ms$( from Bezout's Identity). Therefore, there exists an integer $b$ such that $ab \equiv 1$ mod m. The value of b is known as multiplicative inverse of $a$ and it can be found using Extended Euclidean Algorithm.
+    Therefore, on multiplying the above equation by b on both sides gives us,
+    \begin{center}
+        $b\cdot a\cdot r_i \equiv b\cdot a \cdot r_j$ mod $m$\\
+        \vspace{3mm}
+        $r_i \equiv r_j$ mod m    ($\because ab \equiv 1$ mod m)
+    \end{center}
+    Hence, it is a contradiction to our initial assumption that $r_i \neq r_j$. Hence, elements in the set $S_1$ will be unique iff gcd(a, m) = 1.
+    \subsection{Euler's Theorem}
+    If gcd(a, m) = 1, then $a^{\phi(m)}$ $\equiv$ 1 (mod m).\\
+    Let us assume, that we have a set S, such that
+    \begin{center}
+        S = \{ x $|$ gcd(x, m) = 1\}\\
+        S = \{$s_1, s_2, s_3, s_4,....,s_{\phi(m)}$\}
+    \end{center}
+    Let us consider gcd(a, m) = 1 and create another set $S_1$ such that
+    \begin{center}
+        $S_1$ = \{ $as_1, as_2, as_3...,as_{\phi(m)}$ \}
+    \end{center}
+    if $as_i$ $\equiv$ $as_j$ (mod m)\\
+    $\Rightarrow$ $s_i$ $\equiv$ $s_j$(mod m)\\
+    Given that gcd(a, m) = 1 and $b.a \equiv 1 $ (mod m)
+    \begin{center}
+        $|S|$ = $\phi$(m)\\
+        $|S_1|$ = $\phi$(m)
+    \end{center}
+    Since a is co-prime with m and $s_i$ is also co-prime with m, then there must be some correspondence between elements of S and $S_1$.\\
+    \begin{center}
+        $s_i \equiv as_j$ (mod m)
+    \end{center}
+    Let us now take product on both sides
+    \begin{center}
+        $$ \prod_{i=1}^{\phi(m)} s_i   \equiv  \prod_{j=1}^{\phi(m)} as_j  (mod\ m)$$ \\
+        $$\Rightarrow \prod_{i=1}^{\phi(m)} s_i  \equiv  a^{\phi(m)}\prod_{j=1}^{\phi(m)} s_j  (mod\ m)$$
+    \end{center}
+    Since gcd($s_i$, m) = 1, each $s_i$ will have multiplicative inverse under mod m. So, after simplifying we get,
+    \begin{center}
+        $a^{\phi(m)} \equiv 1 ( mod\ m)$
+    \end{center}
+    \subsection{Fermat's Theorem}
+    If P is a prime number and P does not divide a(means that P is co-prime to a), then\\
+    \begin{center}
+        $a^{P-1} \equiv 1 (mod\ P)$
+    \end{center}
+    Using Fermat's theorem,
+    \begin{center}
+        $\Rightarrow a^P \equiv a (mod\ P)$
+    \end{center}
+    \textbf{Note:}\\
+    If P|a(P divides a), then
+    \begin{center}
+        a $\equiv$ 0 mod P\\
+        $\Rightarrow a^P \equiv 0 mod\ P$\\
+        $\Rightarrow a^P \equiv a mod\ P$\\
+    \end{center}
+    But the Fermat's theorem will not hold when P\|a.
+\end{itemize}
+\subsection{RSA Cryptosystem}
+Few facts:
+\begin{itemize}
+    \item g(a, m) = 1, then $a^{\phi(m)} \equiv 1 (mod\ m)$
+    \item $a^{P-1} \equiv 1 (mod \ P)$
+\end{itemize}
+Now let us understand the components of RSA
+\begin{enumerate}
+    \item n = pq, where p, q are primes
+    \item Plaintext space =  ${\zbar}_n$\\
+    Ciphertext space = ${\zbar}_n$\\
+    \item Key space = \{K = (n,p,q,e,d) $|\ ed \equiv\ (mod \phi(n))$\}
+    \item Encryption : \\
+    \begin{center}
+        E(x, K) = c\\
+        c = E(x, K) = $x^e$(mod n)
+    \end{center}
+    \item Decryption :\\
+    \begin{center}
+        Dec(c, K) = x\\
+        c = Dec(c, K) = $c^d$(mod n)
+    \end{center}
+\end{enumerate}
+We know that e and d are related as :
+\begin{center}
+    ed $\equiv$ 1 mod $\phi$(n)\\
+    $\Rightarrow$ ed - 1 = t.$\phi$(n)\\
+    $\Rightarrow$ 1 = ed + $t_1$.$\phi$(n)\\
+    1 = gcd(e, Q(n)) = ed + $t_1$.$\phi$(n)
+\end{center}
+\textbf{Encryption:}\\
+\begin{center}
+    c = $x^e$(mod n)
+\end{center}
+\textbf{Decryption:}\\
+\begin{center}
+    x = $c^d$(mod n)\\
+    $c^d$ = ${(x^e)}^d$ mod n\\
+    $c^d$ = $x^{ed}$ mod n\\
+    Now using ed = 1 + t.$\phi$(n) from above\\
+    $c^d$ = $x^{1+t.\phi(n)}$ mod n\\
+    $c^d$ = x.$x^{t.\phi(n)}$ mod n\\
+    Since p, q are primes and n = pq, then $\phi$(n) = (p-1)(q-1)\\
+    $c^d$ = x.$x^{t[(p-1)(q-1)]}$ mod n\\
+    Finally,\\
+    $c^d$ = x.$x^{t[(p-1)(q-1)]}$ mod (pq)\\
+\end{center}
+Now let us simplify the part $x^{t[(p-1)(q-1)]}$ mod (pq), where x $\in \zbar$ \\
+We check $x^{t[(p-1)(q-1)]}$ mod p\\
+    $\equiv {x^{p-1}}^{t(q-1)}$ mod p\\
+    $\equiv 1 $(mod p) [As $x^{p-1} \equiv 1 mod\ p$]\\
+Now we check $x^{t[(p-1)(q-1)]}$ mod q\\
+    $\equiv {x^{q-1}}^{t(p-1)}$ mod q\\
+    $\equiv 1 $(mod p) [As $x^{q-1} \equiv 1 mod\ q$]\\
+\vspace{3mm}
+We finally have,\\
+\begin{center}
+    $x^{t[(p-1)(q-1)]}$ $\equiv 1 $(mod p)\\
+    $x^{t[(p-1)(q-1)]}$ $\equiv 1 $(mod q)\\
+    $\Rightarrow$ $x^{t[(p-1)(q-1)]}$ $\equiv 1 $(mod pq)\\
+\end{center}
+Substituting the above result, 
+\begin{center}
+     $c^d$ = x.$x^{t[(p-1)(q-1)]}$ mod (pq)\\
+      $c^d$ = x.1 mod (pq)\\
+      $c^d$ = x mod (pq)\\
+\end{center}
+Hence, our decryption is successful.\\
+\vspace{3mm}
+Now let us consider a scenario where Alice is trying to communicate with Bob. Here, two keys play the main role-one is public key and the other is secret key.\\
+Here, Bob is encrypting the message and sending it to Alice and Alice has both the keys. Public key is known to Bob but the secret key is not known to Bob\\
+\textbf{\underline{Alice}}\\
+n = pq and p, q are large prime numbers\\
+ed $\equiv$ 1 (mod $\phi$(n))\\
+She chooses e\\
+Public key of Alice = (n, e)\\
+She can generate d using extended euclidean algorithm\\
+Secret key of Alice = (p, q, d)\\
+\textbf{\underline{Bob}}\\
+Now Bob selects a message x from ${\zbar}_n$\\
+x\\
+He knows n, e for Alice, so he can encrypt\\\\
+y = $x^e (mod n)$\\
+\vspace{3mm}
+Now the message y is sent to Alice, she can decrypt it with her secret key as :
+\begin{center}
+    $x = y^d$ (mod n)
+\end{center}
+Now, if we were given n, how can we find p and q in polynomial time?\\
+We can run a loop from 2 to $\sqrt{n}$, and everytime we calculate n \% i, if it is zero, it means we have found a factor, then we check if the factor is prime. If yes, then we divide n by p, to get q. Getting the prime factors of a number n is computationally hard problem when n is large.\\
+\textbf{Note:} If we are able to compute p,q from n, then we will be able to compute $\phi$(n). And then we already have e, so we will be able to find d by extended euclidean algorithm and security of RSA will be broken. So, RSA is based on the fact that factorization problem is hard.\\
+\subsubsection{RSA Problem}
+We have public key (n, e) and c. If from this we can find x (c = $x^e$), we will be able to break security of RSA.\\
+We have an algorithm to solve the RSA problem, i.e., it can find the decryption without the factorization. Is this true?
+\textbf{Note:} If we can break the RSA, there is no guarantee that we can find the factors. But if we have the factors, we can always Break the RSA. But the reverse is not always true. So RSA is secure under two assumptions:
+\begin{itemize}
+    \item factorization is hard
+    \item decryption is hard
+\end{itemize}
+\textbf{Note : } Public key encryption is generally heavy because of $x^e$ and $c^d$ operation. The exponential operations are heavy. So they are usually avoided.\\
+
+\end{document}
